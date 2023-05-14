@@ -1,43 +1,10 @@
-#!/bin/bash -e
-
-# Allow specific kafka versions to perform any unique bootstrap operations
-OVERRIDE_FILE="/opt/overrides/${KAFKA_VERSION}.sh"
-if [[ -x "$OVERRIDE_FILE" ]]; then
-    echo "Executing override file $OVERRIDE_FILE"
-    eval "$OVERRIDE_FILE"
-fi
+#!/usr/bin/env bash
 
 # Store original IFS config, so we can restore it at various stages
 ORIG_IFS=$IFS
 
-if [[ -z "$KAFKA_ZOOKEEPER_CONNECT" ]]; then
-    echo "ERROR: missing mandatory config: KAFKA_ZOOKEEPER_CONNECT"
-    exit 1
-fi
-
 if [[ -z "$KAFKA_PORT" ]]; then
     export KAFKA_PORT=9092
-fi
-
-create-topics.sh &
-unset KAFKA_CREATE_TOPICS
-
-if [[ -z "$KAFKA_ADVERTISED_PORT" && \
-  -z "$KAFKA_LISTENERS" && \
-  -z "$KAFKA_ADVERTISED_LISTENERS" && \
-  -S /var/run/docker.sock ]]; then
-    KAFKA_ADVERTISED_PORT=$(docker port "$(hostname)" $KAFKA_PORT | sed -r 's/.*:(.*)/\1/g' | head -n1) 
-    export KAFKA_ADVERTISED_PORT
-fi
-
-if [[ -z "$KAFKA_BROKER_ID" ]]; then
-    if [[ -n "$BROKER_ID_COMMAND" ]]; then
-        KAFKA_BROKER_ID=$(eval "$BROKER_ID_COMMAND")
-        export KAFKA_BROKER_ID
-    else
-        # By default auto allocate broker ID
-        export KAFKA_BROKER_ID=-1
-    fi
 fi
 
 if [[ -z "$KAFKA_LOG_DIRS" ]]; then
@@ -96,9 +63,6 @@ if [[ -z "$KAFKA_ADVERTISED_HOST_NAME$KAFKA_LISTENERS" ]]; then
     export KAFKA_ADVERTISED_HOST_NAME="$HOSTNAME_VALUE"
 fi
 
-#Issue newline to config file in case there is not one already
-echo "" >> "$KAFKA_HOME/config/server.properties"
-
 (
     function updateConfig() {
         key=$1
@@ -132,7 +96,7 @@ echo "" >> "$KAFKA_HOME/config/server.properties"
 
         if [[ $env_var =~ ^KAFKA_ ]]; then
             kafka_name=$(echo "$env_var" | cut -d_ -f2- | tr '[:upper:]' '[:lower:]' | tr _ .)
-            updateConfig "$kafka_name" "${!env_var}" "$KAFKA_HOME/config/server.properties"
+            updateConfig "$kafka_name" "${!env_var}" "$KAFKA_HOME/config/kraft/server.properties"
         fi
 
         if [[ $env_var =~ ^LOG4J_ ]]; then
@@ -146,4 +110,10 @@ if [[ -n "$CUSTOM_INIT_SCRIPT" ]] ; then
   eval "$CUSTOM_INIT_SCRIPT"
 fi
 
-exec "$KAFKA_HOME/bin/kafka-server-start.sh" "$KAFKA_HOME/config/server.properties"
+# Kraft configuration as defined by the kafka docs
+# https://kafka.apache.org/quickstart#quickstart_startserver
+KAFKA_CLUSTER_ID="$("$KAFKA_HOME"/bin/kafka-storage.sh random-uuid)"
+"$KAFKA_HOME/bin/kafka-storage.sh" format -t "$KAFKA_CLUSTER_ID" -c "$KAFKA_HOME/config/kraft/server.properties"
+
+# Start
+exec "$KAFKA_HOME/bin/kafka-server-start.sh" "$KAFKA_HOME/config/kraft/server.properties"

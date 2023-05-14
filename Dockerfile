@@ -1,60 +1,46 @@
-FROM openjdk:11-jre-slim
+FROM docker.io/library/eclipse-temurin:11-jre-jammy
 
-ARG kafka_version=2.8.1
-ARG scala_version=2.13
-ARG vcs_ref=unspecified
-ARG build_date=unspecified
+ARG KAFKA_VERSION=3.4.0
+ARG SCALA_VERSION=2.13
+ARG KAFKA_ADVERTISED_HOST_NAME=localhost
+ARG KAFKA_ADVERTISED_PORT=9092
+ARG VCS_REF=unspecified
+ARG BUILD_DATE=unspecified
 
 LABEL org.label-schema.name="kafka" \
       org.label-schema.description="Apache Kafka" \
-      org.label-schema.build-date="${build_date}" \
-      org.label-schema.vcs-url="https://github.com/wurstmeister/kafka-docker" \
-      org.label-schema.vcs-ref="${vcs_ref}" \
-      org.label-schema.version="${scala_version}_${kafka_version}" \
+      org.label-schema.build-date="${BUILD_DATE}" \
+      org.label-schema.vcs-url="https://github.com/dark0dave/kafka-docker" \
+      org.label-schema.vcs-ref="${VCS_REF}" \
+      org.label-schema.version="${SCALA_VERSION}_${KAFKA_VERSION}" \
       org.label-schema.schema-version="1.0" \
-      maintainer="wurstmeister"
+      maintainer="dark0dave"
 
-ENV KAFKA_VERSION=$kafka_version \
-    SCALA_VERSION=$scala_version \
+ENV KAFKA_VERSION=$KAFKA_VERSION \
+    SCALA_VERSION=$SCALA_VERSION \
+    KAFKA_ADVERTISED_HOST_NAME=$KAFKA_ADVERTISED_HOST_NAME \
+    KAFKA_ADVERTISED_PORT=$KAFKA_ADVERTISED_PORT \
+    KAFKA_URL="https://archive.apache.org/dist/kafka/${KAFKA_VERSION}/kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz" \
     KAFKA_HOME=/opt/kafka
+
+EXPOSE $KAFKA_ADVERTISED_PORT
 
 ENV PATH=${PATH}:${KAFKA_HOME}/bin
 
-COPY download-kafka.sh start-kafka.sh broker-list.sh create-topics.sh versions.sh /tmp2/
+WORKDIR /opt
 
-RUN set -eux ; \
-    apt-get update ; \
-    apt-get upgrade -s ; \
-    apt-get install -y --no-install-recommends jq net-tools curl wget ; \
-### BEGIN docker for CI tests
-    apt-get install -y --no-install-recommends gnupg lsb-release ; \
-	curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg ; \
-	echo \
-  		"deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian \
-  		$(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null ; \
-    apt-get update ; \
-    apt-get install -y --no-install-recommends docker-ce-cli ; \
-    apt remove -y gnupg lsb-release ; \
-    apt clean ; \
-    apt autoremove -y ; \
-    apt -f install ; \
-### END docker for CI tests
-### BEGIN other for CI tests
-    apt-get install -y --no-install-recommends netcat ; \
-### END other for CI tests
-    chmod a+x /tmp2/*.sh ; \
-    mv /tmp2/start-kafka.sh /tmp2/broker-list.sh /tmp2/create-topics.sh /tmp2/versions.sh /usr/bin ; \
-    sync ; \
-    /tmp2/download-kafka.sh ; \
-    tar xfz /tmp2/kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz -C /opt ; \
-    rm /tmp2/kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz ; \
-    ln -s /opt/kafka_${SCALA_VERSION}-${KAFKA_VERSION} ${KAFKA_HOME} ; \
-    rm -rf /tmp2 ; \
-    rm -rf /var/lib/apt/lists/*
-
-COPY overrides /opt/overrides
+RUN apt-get update -qqq \
+    && apt-get install -qqqy --no-install-recommends \
+    curl \
+    jq \
+    net-tools \
+    wget \
+    && wget -q ${KAFKA_URL} -O - | tar -xz \
+    && ln -s /opt/kafka_${SCALA_VERSION}-${KAFKA_VERSION} ${KAFKA_HOME} \
+    && rm -rf /var/lib/apt/lists/*
 
 VOLUME ["/kafka"]
 
-# Use "exec" form so that it runs as PID 1 (useful for graceful shutdown)
-CMD ["start-kafka.sh"]
+COPY entrypoint.sh /usr/bin
+
+CMD ["entrypoint.sh"]
