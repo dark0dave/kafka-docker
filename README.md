@@ -1,64 +1,27 @@
 [![Docker Pulls](https://img.shields.io/docker/pulls/wurstmeister/kafka.svg)](https://hub.docker.com/r/wurstmeister/kafka/)
 [![Docker Stars](https://img.shields.io/docker/stars/wurstmeister/kafka.svg)](https://hub.docker.com/r/wurstmeister/kafka/)
-[![](https://images.microbadger.com/badges/version/wurstmeister/kafka.svg)](https://microbadger.com/images/wurstmeister/kafka "Get your own version badge on microbadger.com")
-[![](https://images.microbadger.com/badges/image/wurstmeister/kafka.svg)](https://microbadger.com/images/wurstmeister/kafka "Get your own image badge on microbadger.com")
 [![Build Status](https://app.travis-ci.com/wurstmeister/kafka-docker.svg?branch=master)](https://app.travis-ci.com/wurstmeister/kafka-docker)
 
 
 kafka-docker
 ============
 
-Dockerfile for [Apache Kafka](http://kafka.apache.org/)
+Dockerfile for [Apache Kafka](http://kafka.apache.org/) running kraft. Because I hate zookeeper.
 
-The image is available directly from [Docker Hub](https://hub.docker.com/r/wurstmeister/kafka/)
+The image is available directly from [Docker Hub](https://hub.docker.com/r/dark0dave/kafka/)
 
 Tags and releases
 -----------------
 
 All versions of the image are built from the same set of scripts with only minor variations (i.e. certain features are not supported on older versions). The version format mirrors the Kafka format, `<scala version>-<kafka version>`. Initially, all images are built with the recommended version of scala documented on [http://kafka.apache.org/downloads](http://kafka.apache.org/downloads). To list all available tags:
 
-```
-curl -s https://registry.hub.docker.com/v2/repositories/wurstmeister/kafka/tags\?page_size\=1024 | jq -r '.results[].name' | sort -u | egrep '\d.\d{2}-.*'
-```
-
-Everytime the image is updated, all tags will be pushed with the latest updates. This should allow for greater consistency across tags, as well as any security updates that have been made to the base image.
+Every time the image is updated, all tags will be pushed with the latest updates. This should allow for greater consistency across tags, as well as any security updates that have been made to the base image.
 
 ---
-
-## Announcements
-
-* **04-Jun-2019** - Update base image to openjdk 212 ([Release notes](https://www.oracle.com/technetwork/java/javase/8u212-relnotes-5292913.html). Please force pull to get these latest updates - including security patches etc.
-
----
-
-## Pre-Requisites
-
-- install docker-compose [https://docs.docker.com/compose/install/](https://docs.docker.com/compose/install/)
-- modify the ```KAFKA_ADVERTISED_HOST_NAME``` in [docker-compose.yml](https://raw.githubusercontent.com/wurstmeister/kafka-docker/master/docker-compose.yml) to match your docker host IP (Note: Do not use localhost or 127.0.0.1 as the host ip if you want to run multiple brokers.)
-- if you want to customize any Kafka parameters, simply add them as environment variables in ```docker-compose.yml```, e.g. in order to increase the ```message.max.bytes``` parameter set the environment to ```KAFKA_MESSAGE_MAX_BYTES: 2000000```. To turn off automatic topic creation set ```KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'```
-- Kafka's log4j usage can be customized by adding environment variables prefixed with ```LOG4J_```. These will be mapped to ```log4j.properties```. For example: ```LOG4J_LOGGER_KAFKA_AUTHORIZER_LOGGER=DEBUG, authorizerAppender```
-
-**NOTE:** There are several 'gotchas' with configuring networking. If you are not sure about what the requirements are, please check out the [Connectivity Guide](https://github.com/wurstmeister/kafka-docker/wiki/Connectivity) in the [Wiki](https://github.com/wurstmeister/kafka-docker/wiki)
 
 ## Usage
 
-Start a cluster:
-
-- ```docker-compose up -d ```
-
-Add more brokers:
-
-- ```docker-compose scale kafka=3```
-
-Destroy a cluster:
-
-- ```docker-compose stop```
-
-## Note
-
-The default ```docker-compose.yml``` should be seen as a starting point. By default each broker will get a new port number and broker id on restart. Depending on your use case this might not be desirable. If you need to use specific ports and broker ids, modify the docker-compose configuration accordingly, e.g. [docker-compose-single-broker.yml](https://github.com/wurstmeister/kafka-docker/blob/master/docker-compose-single-broker.yml):
-
-- ```docker-compose -f docker-compose-single-broker.yml up```
+- docker run -d
 
 ## Broker IDs
 
@@ -114,7 +77,7 @@ KAFKA_ADVERTISED_LISTENERS=SSL://_{HOSTNAME_COMMAND}:9093,PLAINTEXT://9092
 
 ## Advertised port
 
-If the required advertised port is not static, it may be necessary to determine this programatically. This can be done with the `PORT_COMMAND` environment variable.
+If the required advertised port is not static, it may be necessary to determine this programmatically. This can be done with the `PORT_COMMAND` environment variable.
 
 ```
 PORT_COMMAND: "docker port $$(hostname) 9092/tcp | cut -d: -f2"
@@ -181,32 +144,3 @@ For example, to connect to a kafka running locally (assumes exposing port 1099)
       JMX_PORT: 1099
 
 Jconsole can now connect at ```jconsole 192.168.99.100:1099```
-
-## Docker Swarm Mode
-
-The listener configuration above is necessary when deploying Kafka in a Docker Swarm using an overlay network. By separating OUTSIDE and INSIDE listeners, a host can communicate with clients outside the overlay network while still benefiting from it from within the swarm.
-
-In addition to the multiple-listener configuration, additional best practices for operating Kafka in a Docker Swarm include:
-
-* Use "deploy: global" in a compose file to launch one and only one Kafka broker per swarm node.
-* Use compose file version '3.2' (minimum Docker version 16.04) and the "long" port definition with the port in "host" mode instead of the default "ingress" load-balanced port binding. This ensures that outside requests are always routed to the correct broker. For example:
-
-```
-ports:
-   - target: 9094
-     published: 9094
-     protocol: tcp
-     mode: host
-```
-
-Older compose files using the short-version of port mapping may encounter Kafka client issues if their connection to individual brokers cannot be guaranteed.
-
-See the included sample compose file ```docker-compose-swarm.yml```
-
-## Release process
-
-See the [wiki](https://github.com/wurstmeister/kafka-docker/wiki/ReleaseProcess) for information on adding or updating versions to release to Dockerhub.
-
-## Tutorial
-
-[http://wurstmeister.github.io/kafka-docker/](http://wurstmeister.github.io/kafka-docker/)
