@@ -1,4 +1,4 @@
-FROM eclipse-temurin:11-jre-jammy
+FROM eclipse-temurin:20-jre-jammy
 
 ARG kafka_version=3.4.0
 ARG scala_version=2.13
