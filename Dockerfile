@@ -1,4 +1,4 @@
-FROM docker.io/library/eclipse-temurin:11-jre-jammy
+FROM docker.io/library/eclipse-temurin:21-jre-jammy
 
 ARG KAFKA_VERSION=3.6.0
 ARG SCALA_VERSION=2.13
