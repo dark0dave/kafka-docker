@@ -1,11 +1,13 @@
 FROM docker.io/library/eclipse-temurin:11-jre-jammy
 
-ARG KAFKA_VERSION=3.6.0
+ARG KAFKA_VERSION=3.6.1
 ARG SCALA_VERSION=2.13
 ARG KAFKA_ADVERTISED_HOST_NAME=localhost
 ARG KAFKA_ADVERTISED_PORT=9092
 ARG VCS_REF=unspecified
+ENV VCS_REF=$VCS_REF
 ARG BUILD_DATE=unspecified
+ENV BUILD_DATE=$BUILD_DATE
 
 LABEL org.label-schema.name="kafka" \
       org.label-schema.description="Apache Kafka" \
