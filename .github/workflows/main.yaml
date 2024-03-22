@@ -7,8 +7,6 @@ on:
       - "*"
   pull_request:
 env:
-  KAFKA_VERSION: ${{ env.KAFKA_VERSION }}
-  SCALA_VERSION: ${{ env.SCALA_VERSION }}
   IMAGE_NAME: ${{ github.repository }}
 jobs:
   pre-commit:
@@ -40,8 +38,8 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha
           build-args: |
-            KAFKA_VERSION=${{ env.KAFKA_VERSION }}
-            SCALA_VERSION=${{ env.SCALA_VERSION }}
+            KAFKA_VERSION=${{ vars.KAFKA_VERSION }}
+            SCALA_VERSION=${{ vars.SCALA_VERSION }}
             VCS_REF=${{ github.sha }}
             BUILD_DATE=${{ github.event.repository.updated_at }}
   push-image:
@@ -80,12 +78,12 @@ jobs:
             linux/amd64
             linux/arm64
           tags: |
-            ${{ format('docker.io/dark0dave/kafka:{0}-{1}', env.KAFKA_VERSION, env.SCALA_VERSION) }}
+            ${{ format('docker.io/dark0dave/kafka:{0}-{1}', vars.KAFKA_VERSION, vars.SCALA_VERSION) }}
             ${{ ( !startsWith(github.ref, 'refs/tags/nightly') && format('docker.io/dark0dave/kafka:{0}', 'latest') ) || '' }}
-            ${{ format('ghcr.io/{0}:{1}-{2}', env.IMAGE_NAME, env.KAFKA_VERSION, env.SCALA_VERSION) }}
-            ${{ ( !startsWith(github.ref, 'refs/tags/nightly') && format('ghcr.io/{0}:{1}', env.IMAGE_NAME, 'latest') ) || '' }}
+            ${{ format('ghcr.io/{0}:{1}-{2}', env.IMAGE_NAME, vars.KAFKA_VERSION, vars.SCALA_VERSION) }}
+            ${{ ( !startsWith(github.ref, 'refs/tags/nightly') && format('ghcr.io/{0}:{1}', vars.IMAGE_NAME, 'latest') ) || '' }}
           build-args: |
-            KAFKA_VERSION=${{ env.KAFKA_VERSION }}
-            SCALA_VERSION=${{ env.SCALA_VERSION }}
+            KAFKA_VERSION=${{ vars.KAFKA_VERSION }}
+            SCALA_VERSION=${{ vars.SCALA_VERSION }}
             VCS_REF=${{ github.sha }}
             BUILD_DATE=${{ github.event.repository.updated_at }}
