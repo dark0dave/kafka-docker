@@ -7,8 +7,8 @@ on:
       - "*"
   pull_request:
 env:
-  KAFKA_VERSION: 3.6.0
-  SCALA_VERSION: 2.13
+  KAFKA_VERSION: ${{ env.KAFKA_VERSION }}
+  SCALA_VERSION: ${{ env.SCALA_VERSION }}
   IMAGE_NAME: ${{ github.repository }}
 jobs:
   pre-commit:
