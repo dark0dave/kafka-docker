@@ -1,5 +1,15 @@
 FROM docker.io/library/eclipse-temurin:11-jre-jammy
 
+WORKDIR /opt
+
+RUN apt-get update -qqq \
+    && apt-get install -qqqy --no-install-recommends \
+    curl \
+    jq \
+    net-tools \
+    wget \
+    && rm -rf /var/lib/apt/lists/*
+
 ARG KAFKA_VERSION=3.7.0
 ARG SCALA_VERSION=2.13
 ARG KAFKA_ADVERTISED_HOST_NAME=localhost
@@ -29,17 +39,7 @@ EXPOSE $KAFKA_ADVERTISED_PORT
 
 ENV PATH=${PATH}:${KAFKA_HOME}/bin
 
-WORKDIR /opt
-
-RUN apt-get update -qqq \
-    && apt-get install -qqqy --no-install-recommends \
-    curl \
-    jq \
-    net-tools \
-    wget \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN wget -q ${KAFKA_URL} -O - | tar -xz \
+RUN wget ${KAFKA_URL} -O - | tar -xz \
     && ln -s /opt/kafka_${SCALA_VERSION}-${KAFKA_VERSION} ${KAFKA_HOME}
 
 VOLUME ["/kafka"]

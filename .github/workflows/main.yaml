@@ -81,7 +81,7 @@ jobs:
             ${{ format('docker.io/dark0dave/kafka:{0}-{1}', vars.KAFKA_VERSION, vars.SCALA_VERSION) }}
             ${{ ( !startsWith(github.ref, 'refs/tags/nightly') && format('docker.io/dark0dave/kafka:{0}', 'latest') ) || '' }}
             ${{ format('ghcr.io/{0}:{1}-{2}', env.IMAGE_NAME, vars.KAFKA_VERSION, vars.SCALA_VERSION) }}
-            ${{ ( !startsWith(github.ref, 'refs/tags/nightly') && format('ghcr.io/{0}:{1}', vars.IMAGE_NAME, 'latest') ) || '' }}
+            ${{ ( !startsWith(github.ref, 'refs/tags/nightly') && format('ghcr.io/{0}:{1}', env.IMAGE_NAME, 'latest') ) || '' }}
           build-args: |
             KAFKA_VERSION=${{ vars.KAFKA_VERSION }}
             SCALA_VERSION=${{ vars.SCALA_VERSION }}
