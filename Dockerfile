@@ -1,14 +1,8 @@
-FROM docker.io/library/eclipse-temurin:21-jre-jammy
+FROM docker.io/library/eclipse-temurin:21-jre-alpine
 
 WORKDIR /opt
 
-RUN apt-get update -qqq \
-    && apt-get install -qqqy --no-install-recommends \
-    curl \
-    jq \
-    net-tools \
-    wget \
-    && rm -rf /var/lib/apt/lists/*
+RUN apk add wget bash
 
 ARG KAFKA_VERSION=3.7.0
 ARG SCALA_VERSION=2.13
